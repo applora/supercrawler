@@ -1,6 +1,6 @@
 import { type Metadata } from 'next';
 
-import Form from './component';
+import Form from './page.client';
 
 export const generateMetadata = async (): Promise<Metadata> => {
   return {
