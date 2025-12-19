@@ -13,31 +13,39 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Generate API Key
-      id: generate-key
+    - name: Prepare deployment files
       run: |
-        API_KEY=$(openssl rand -hex 16)
-        echo "api_key=$API_KEY" >> $GITHUB_OUTPUT
+        # Create a temporary directory for deployment
+        mkdir deploy-temp
+        # Copy necessary files, excluding unnecessary ones
+        rsync -av --exclude='.git' \
+                  --exclude='node_modules' \
+                  --exclude='.DS_Store' \
+                  --exclude='deploy-temp' \
+                  --exclude='.gitignore' \
+                  --exclude='dist' \
+                  . deploy-temp/
 
     - name: Deploy to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: 194.195.92.198
+        username: root
+        password: ${{ secrets.SERVER_PASSWORD }}
+        source: "deploy-temp/*"
+        target: "/root/supercrawler"
+        strip_components: 1
+        overwrite: true
+        rm: true
+
+    - name: Setup and run on server
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: 194.195.92.198
         username: root
         password: ${{ secrets.SERVER_PASSWORD }}
         script: |
-          # Create directory if not exists
-          mkdir -p /root/supercrawler
           cd /root/supercrawler
-
-          # Backup current version if exists
-          if [ -d ".git" ]; then
-            git stash
-            git pull origin main
-          else
-            # Clone the repository
-            git clone https://github.com/${{ github.repository }}.git .
-          fi
 
           # Create .env file with secrets
           cat > .env << EOF
@@ -45,7 +53,7 @@ jobs:
           REDIS_URL=redis://redis:6379
           PORT=3000
           HOST=${{ secrets.HOST }}
-          API_KEY=${{ steps.generate-key.outputs.api_key }}
+          API_KEY=${{ secrets.API_KEY }}
           EOF
 
           # Stop existing containers
@@ -67,12 +75,10 @@ jobs:
           docker-compose logs --tail=50
 
           echo "Deployment completed successfully!"
-          echo "API Key generated: ${{ steps.generate-key.outputs.api_key }}"
           echo "Access your application at: https://${{ secrets.HOST }}"
 
     - name: Display deployment info
       run: |
         echo "✅ Deployment completed!"
-        echo "🔑 Generated API Key: ${{ steps.generate-key.outputs.api_key }}"
         echo "🌐 Application URL: https://${{ secrets.HOST }}"
         echo "📊 Traefik Dashboard: http://194.195.92.198:8080"
