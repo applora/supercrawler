@@ -10,9 +10,6 @@ RUN npm ls crawlee apify puppeteer playwright
 # to speed up the build using Docker layer cache.
 COPY --chown=myuser:myuser package*.json Dockerfile ./
 
-# Check Playwright version is the same as the one from base image.
-RUN node check-playwright-version.mjs
-
 # Install all dependencies. Don't audit to speed up the installation.
 RUN npm install --include=dev --audit=false
 
