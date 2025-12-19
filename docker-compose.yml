@@ -1,6 +1,25 @@
 name: 'supercrawler'
 
 services:
+  traefik:
+    image: traefik:v3.0
+    container_name: supercrawler-traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:8880"
+      - "--entrypoints.web.http.middlewares.https.redirectscheme.scheme=https"
+      - "--entrypoints.websecure.address=:8443"
+      - "--entrypoints.websecure.http.tls=true"
+    ports:
+      - "8880:8880"
+      - "8443:8443"
+      - "8080:8080"  # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
   web:
     build: .
     environment:
@@ -11,27 +30,19 @@ services:
     volumes:
       - ./storage:/app/storage
     restart: unless-stopped
-    networks:
-      - default
-      - n8n_default  # Connect to n8n's network
     labels:
-      # Use labels that n8n-traefik can detect
       - "traefik.enable=true"
-      - "traefik.http.routers.supercrawler.rule=Host(`${HOST}`)"
-      - "traefik.http.routers.supercrawler.entrypoints=http"
-      - "traefik.http.services.supercrawler.loadbalancer.server.port=3000"
+      - "traefik.http.routers.web.rule=Host(`${HOST}`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls=true"
+      - "traefik.http.routers.web.middlewares=https"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
 
   redis:
     image: redis:7-alpine
     volumes:
       - redis_data:/data
     restart: unless-stopped
-
-networks:
-  default:
-  n8n_default:
-    external: true
-    name: n8n_default
 
 volumes:
   redis_data:

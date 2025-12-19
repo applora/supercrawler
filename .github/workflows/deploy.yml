@@ -69,9 +69,6 @@ jobs:
           # Remove old images to free space
           docker system prune -f
 
-          # Connect to n8n's network if not already connected
-          docker network inspect n8n_default >/dev/null 2>&1 || docker network create n8n_default
-
           # Build and start services
           docker-compose up -d --build
 
@@ -82,16 +79,18 @@ jobs:
           docker-compose ps
 
           # Show logs for each service
+          echo "=== Traefik logs ==="
+          docker-compose logs --tail=50 traefik
           echo "=== Web logs ==="
           docker-compose logs --tail=50 web
           echo "=== Redis logs ==="
           docker-compose logs --tail=50 redis
 
           echo "Deployment completed successfully!"
-          echo "Access your application at: http://${{ secrets.HOST }}"
+          echo "Access your application at: https://${{ secrets.HOST }}"
 
     - name: Display deployment info
       run: |
         echo "✅ Deployment completed!"
-        echo "🌐 Application URL: http://${{ secrets.HOST }}"
-        echo "📊 The application is now routed through the existing n8n-traefik"
+        echo "🌐 Application URL: https://${{ secrets.HOST }}"
+        echo "📊 Traefik Dashboard: http://194.195.92.198:8080"
