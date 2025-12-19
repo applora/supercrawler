@@ -78,8 +78,51 @@ jobs:
           # Show status
           docker-compose ps
 
-          # Show logs
-          docker-compose logs --tail=50
+          # Show logs for each service
+          echo "=== Traefik logs ==="
+          docker-compose logs --tail=50 traefik
+          echo "=== Web logs ==="
+          docker-compose logs --tail=50 web
+          echo "=== Redis logs ==="
+          docker-compose logs --tail=50 redis
+
+          # Check if Traefik is running, if not try to restart it
+          if ! docker-compose ps | grep traefik | grep -q "Up"; then
+            echo "Traefik is not running, trying to restart..."
+
+            # Check Docker daemon status
+            systemctl status docker || service docker status
+
+            # Check if ports 80 and 8080 are in use
+            netstat -tlnp | grep -E ":80\s|:8080\s" || echo "Ports 80/8080 are free"
+
+            # Try to stop and remove Traefik container
+            docker stop traefik 2>/dev/null || true
+            docker rm traefik 2>/dev/null || true
+
+            # Try to run Traefik directly to see error
+            echo "Trying to run Traefik directly..."
+            docker run --rm --name traefik-test \
+              -p 80:80 \
+              -p 8080:8080 \
+              -v /var/run/docker.sock:/var/run/docker.sock:ro \
+              --network supercrawler_web-network \
+              traefik:v3.0 \
+              --api.insecure=true \
+              --providers.docker=true \
+              --providers.docker.exposedbydefault=false \
+              --entrypoints.web.address=:80 \
+              --log.level=DEBUG || true
+
+            # Restart with docker-compose
+            docker-compose up -d traefik
+            sleep 5
+            echo "=== Traefik logs after restart ==="
+            docker-compose logs --tail=50 traefik
+
+            # Final check
+            docker ps -a | grep traefik
+          fi
 
           echo "Deployment completed successfully!"
           echo "Access your application at: https://${{ secrets.HOST }}"
