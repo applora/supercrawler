@@ -93,8 +93,8 @@ jobs:
             # Check Docker daemon status
             systemctl status docker || service docker status
 
-            # Check if ports 80 and 8080 are in use
-            netstat -tlnp | grep -E ":80\s|:8080\s" || echo "Ports 80/8080 are free"
+            # Check if ports 8880, 8443 and 8081 are in use
+            netstat -tlnp | grep -E ":8880\s|:8443\s|:8081\s" || echo "Ports 8880/8443/8081 are free"
 
             # Try to stop and remove Traefik container
             docker stop traefik 2>/dev/null || true
@@ -103,15 +103,17 @@ jobs:
             # Try to run Traefik directly to see error
             echo "Trying to run Traefik directly..."
             docker run --rm --name traefik-test \
-              -p 80:80 \
-              -p 8080:8080 \
+              -p 8880:8880 \
+              -p 8443:8443 \
+              -p 8081:8080 \
               -v /var/run/docker.sock:/var/run/docker.sock:ro \
               --network supercrawler_web-network \
               traefik:v3.0 \
               --api.insecure=true \
               --providers.docker=true \
               --providers.docker.exposedbydefault=false \
-              --entrypoints.web.address=:80 \
+              --entrypoints.web.address=:8880 \
+              --entrypoints.websecure.address=:8443 \
               --log.level=DEBUG || true
 
             # Restart with docker-compose
@@ -125,10 +127,10 @@ jobs:
           fi
 
           echo "Deployment completed successfully!"
-          echo "Access your application at: https://${{ secrets.HOST }}"
+          echo "Access your application at: http://${{ secrets.HOST }}:8880"
 
     - name: Display deployment info
       run: |
         echo "✅ Deployment completed!"
-        echo "🌐 Application URL: https://${{ secrets.HOST }}"
-        echo "📊 Traefik Dashboard: http://194.195.92.198:8080"
+        echo "🌐 Application URL: http://${{ secrets.HOST }}:8880"
+        echo "📊 Traefik Dashboard: http://194.195.92.198:8081"

@@ -3,15 +3,17 @@ name: 'supercrawler'
 services:
   traefik:
     image: traefik:v3.0
-    container_name: traefik
+    container_name: supercrawler-traefik
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.address=:8880"
+      - "--entrypoints.websecure.address=:8443"
     ports:
-      - "80:80"
-      - "8080:8080"
+      - "8880:8880"
+      - "8443:8443"
+      - "8081:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
