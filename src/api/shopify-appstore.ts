@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { success, error } from "@/lib/api-response.js";
-import { FetchError } from "@/modules/shopify-appstore-api/index.js";
+import { success, error } from "../lib/api-response.js";
+import { FetchError } from "../modules/shopify-appstore-api/index.js";
 import {
   getAppList,
   getPageAppReviews,
@@ -9,21 +9,21 @@ import {
   getCurrentShopifyDeveloper,
   getCurrentShopifyKeywordAuthComplete,
   getCurrentShopifyKeyword,
-} from "@/modules/shopify-appstore-api/index.js";
+} from "../modules/shopify-appstore-api/index.js";
 
 // Helper function to handle errors and extract status
 function handleError(e: any) {
   if (e instanceof FetchError) {
     // This is a FetchError with status
     return {
-      message: e.message || 'Request failed',
-      status: e.status
+      message: e.message || "Request failed",
+      status: e.status,
     };
   }
   // Regular Error
   return {
-    message: e instanceof Error ? e.message : 'Unknown error',
-    status: 500
+    message: e instanceof Error ? e.message : "Unknown error",
+    status: 500,
   };
 }
 

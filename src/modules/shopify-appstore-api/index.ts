@@ -1,5 +1,5 @@
 import { load } from "cheerio";
-import { browserFetch } from "@/lib/fetch.js";
+import { browserFetch } from "../../lib/fetch.js";
 import {
   getAppDetail,
   getAppReviews,
@@ -11,11 +11,7 @@ import {
 
 // Custom error class to include HTTP status
 export class FetchError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-    public cause?: Error
-  ) {
+  constructor(message: string, public status: number, public cause?: Error) {
     super(message);
     this.name = "FetchError";
   }
